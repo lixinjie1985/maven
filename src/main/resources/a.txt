@@ -1,0 +1,5 @@
+${env.JAVA_HOME} 
+${param}
+${sts.env}
+${country.name}
+${env.name}

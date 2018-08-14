@@ -1,0 +1,105 @@
+							构建Profile
+
+环境多样性
+开发、测试、准生产、生产环境。windows、linux操作系统。
+
+不同的环境配置肯定不同，每次要为不同环境修改代码或配置。
+
+Profile
+profile可以理解为环境或配置。目的是尽量不要去修改代码的前提下，让程序在不同环境间具有可移植性。
+
+Maven Profile
+Maven中的profile是一组可选的配置，可以用来设置或者覆盖配置默认值。
+
+pom.xml中的profiles元素，它包含了一个或者多个profile元素。每个profile必须要有一个id元素。
+由于profile覆盖了pom.xml中的默认设置，profiles通常是pom.xml中的最后一个元素。
+
+说明一点：
+profile几乎可以覆盖所有pom.xml中的配置，几乎可以包含所有你能在project下看到的元素。
+
+激活Profile
+针对不同的环境应用不同的profile。
+
+显式激活
+我们可以通过传给Maven一个-P<profile_id>参数来调用指定的profile。
+
+选择器激活
+总共可以包含四种选择器：JDK，操作系统，属性，文件。当所有选择器都满足时profile才会被激活。
+<profiles>
+	<profile>
+		<id>dev</id>
+		<activation>
+			<activeByDefault>false</activeByDefault>
+			<jdk>1.5</jdk>
+			<os>
+				<name>Windows XP</name>
+				<family>Windows</family>
+				<arch>x86</arch>
+				<version>5.1.2600</version>
+			</os>
+			<property>
+				<name>foo</name>
+				<value>bar</value>
+			</property>
+			<file>
+				<exists>file2.properties</exists>
+				<missing>file1.properties</missing>
+			</file>
+		</activation>
+	</profile>
+</profiles>
+
+属性缺失激活
+<profiles>
+	<profile>
+		<id>dev</id>
+		<activation>
+			<property>
+				<name>!environment.type</name>
+			</property>
+		</activation>
+	</profile>
+</profiles>
+惊叹号表示“否定”，当没有设置${environment.type}属性时，profile被激活。
+
+Settings Profile
+pom.xml中的profile只会覆盖某个项目的配置，而settings.xml中的profile可以应用到所有Maven构建的项目。
+
+定义位置
+可以在~/.m2/settings.xml中的用户特定settings profile，
+或者在/usr/local/maven/conf/settings.xml中的全局settings profile。
+
+定义内容
+settings.xml中的profiles只允许定义：
+构件仓库，插件仓库，自由形式的属性用于pom.xml中的插件配置变量。
+
+profile激活
+除了上面提到的激活方式（显式激活/选择器激活）外，还可以定义一个激活列表。
+
+可以在~/.m2/settings.xml文件中添加如下设置
+<settings>
+	<activeProfiles>
+		<activeProfile>dev</activeProfile>
+	</activeProfiles>
+</settings>
+
+说明一点：
+该设置不仅会激活settings.xml文件中定义的profile，也会激活id匹配的pom.xml中定义的profile。
+
+全局Settings Profile
+你也可以在/usr/local/maven/conf/settings.xml中定义一组全局profile。
+在这个配置文件中定义的profile对所有使用该Maven安装的用户可用。
+配置全局settings profile和配置用户特定的settings profile的方法完全一样。
+
+说明一点：
+settings profile的缺点是它们可能会干扰项目可移植性。
+
+列出活动的Profile
+Maven profile可以在四个地方定义，
+项目pom.xml，用户特定settings.xml，全局settings.xml。
+
+为了更方便的了解某个项目可用的profile，以及它们是在哪里定义的。
+Maven Help插件定义了一个目标，active-profiles，它能列出所有激活的profile，以及它们在哪里定义。
+mvn help:active-profiles
+
+

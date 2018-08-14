@@ -1,0 +1,21 @@
+								前导知识
+
+1、使用过Maven
+	做过Java开发
+	pom.xml，定义了一个maven项目
+	settings.xml，做一些公共默认配置
+	仓库：本地仓库、远程仓库、核心仓库
+
+2、Maven是什么
+	一个项目管理工具，也称构建工具
+	从源码到jar包或war包
+	处理资源文件，编译、测试、打包、安装、部署、生成报告
+
+3、约定优于配置（Convention Over Configuration）
+	src/main/java
+	src/main/resources
+	src/test/java
+	src/test/resources
+	src/main/webapp
+	target/classes
+	target/test-classes

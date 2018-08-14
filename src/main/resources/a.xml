@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<key1>${env.JAVA_HOME}</key1> 
+<key2>${param}</key2>
+<key3 key="${sts.env}"></key3>
+<key4 h:key="${country.name}"></key4>
+<key5>${env.name}</key5>

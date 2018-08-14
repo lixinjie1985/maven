@@ -1,0 +1,408 @@
+					项目对象模型（Project Object Model，POM）
+
+对项目管理进行抽象建模，形成POM。pom.xml文件定义了一个Maven项目。
+
+Maven坐标
+坐标为一个项目定义一个唯一的位置，使用坐标来寻找和定位项目。
+
+一个项目对另一个项目的依赖，其实是一个坐标对另一个坐标的依赖。
+
+坐标有五部分组成：
+groupId，artifactId，version，packaging，classifier
+groupId
+归类了一组相关的构件。
+artifactId
+是项目的主要定义符。当你生成一个构件，这个构件将由artifactId命名。
+version
+当一个构件发布的时候，它是使用一个版本号发布的。
+packaging
+打包方式，jar、war等
+classifier
+如果你要发布同样的代码，但是由于技术原因需要生成两个单独的构件，你就要使用一个分类器（classifier）。
+
+因为它们的groupId、artifactId、version是一样的，无法区分开。所以使用<classifier></classifier>加以区分。
+
+一个用Java7编译，一个用Java8编译，<classifier>java7</classifier>、<classifier>java8</classifier>
+最终生产的名字上会带有-java7或-java8
+
+项目依赖
+Maven可以管理内部和外部依赖。
+外部依赖指依赖网络上的类库，内部依赖是指依赖自己的其它项目。
+
+依赖范围
+可以理解为什么时候需要这个依赖。
+
+compile（编译范围）
+compile是默认的范围，如果没有指定范围，那就是编译范围。
+<dependency>
+	<groupId>com.alibaba</groupId>
+	<artifactId>fastjson</artifactId>
+	<version>1.2.43</version>
+</dependency>
+在任何时候都需要，同时它们也会被打包。
+
+provided（已提供范围）
+provided依赖只有在当JDK或者容器已提供该依赖之后才使用。
+<dependency>
+	<groupId>javax.servlet</groupId>
+	<artifactId>javax.servlet-api</artifactId>
+	<version>3.0.1</version>
+	<scope>provided</scope>
+</dependency>
+只在编译时需要。它们不是传递性的，也不会被打包。
+
+runtime（运行时范围）
+<dependency>
+	<groupId>mysql</groupId>
+	<artifactId>mysql-connector-java</artifactId>
+	<version>5.1.45</version>
+	<scope>runtime</scope>
+</dependency>
+在运行和测试时候需要，编译时不需要，会被打包。
+
+test（测试范围）
+<dependency>
+	<groupId>junit</groupId>
+	<artifactId>junit</artifactId>
+	<version>4.12</version>
+	<scope>test</scope>
+</dependency>
+只在测试编译和测试运行阶段需要，不会被打包。
+
+system（系统范围）
+依赖由本地系统类库提供，需要使用一个systemPath元素指定依赖。
+Maven不会在仓库中去寻找它。
+注意该范围是不推荐使用。
+与provided（容器提供）类似，只在编译时需要。它们不是传递性的，也不会被打包。
+
+可选依赖
+假设有一个场景，项目同时支持JSON和XML，该项目的用户只会选择其中一种
+<dependency>
+	<groupId>com.alibaba</groupId>
+	<artifactId>fastjson</artifactId>
+	<version>1.2.43</version>
+	<optional>true</optional>
+</dependency>
+
+<dependency>
+	<groupId>org.dom4j</groupId>
+	<artifactId>dom4j</artifactId>
+	<version>2.0.0</version>
+	<optional>true</optional>
+</dependency>
+
+编译时需要两个依赖类库，但不希望在使用类库的项目中，这两个依赖类库同时作为传递性依赖出现。
+
+在该类库的用户中，使用哪个添加哪个
+<dependency>
+	<groupId>com.alibaba</groupId>
+	<artifactId>fastjson</artifactId>
+	<version>1.2.43</version>
+</dependency>
+或者
+<dependency>
+	<groupId>org.dom4j</groupId>
+	<artifactId>dom4j</artifactId>
+	<version>2.0.0</version>
+</dependency>
+
+在理想的世界中，你不需要使用可选依赖。
+只需把这两种情况放入两个子模块或子项目，用户需要哪一个引入哪一个。
+
+依赖版本界限
+你并不必须为依赖声明某个特定的版本，可以指定一个满足给定依赖的版本界限（或范围）。
+就是数学中的区间。
+(, )，开区间，不包含边界
+[, ]，闭区间，包含边界
+<version>[3.8,4.0)</version>
+<version>[,3.8.1]</version
+也可以使用半开半闭区间。
+
+目的是当侦测到版本冲突的时候，Maven会使用冲突算法来选择最好的版本。具有一定的弹性。
+
+否则的话你会得到一个构建失败报告，告诉你有版本冲突。
+
+但要保守的使用它，只有在确实需要的时候才使用。
+更好的做法是通过dependencyManagement来解决冲突。像spring boot那样。
+
+
+传递性依赖
+传递性依赖就是对于一个依赖的依赖。
+如果project-a依赖于project-b，而后者接着依赖于project-c，那么project-c就被认为是project-a的传递性依赖。
+如果project-c又依赖于project-d，那么project-d就也被认为是project-a的传递性依赖。
+
+Maven能够管理传递性依赖，你不用去详细了解依赖的细节。
+它建立一个依赖图，分析和处理一些可能发生的冲突和重叠。
+
+如果Maven看到有两个项目依赖于同样的groupId和artifactId，它会自动整理出使用哪个依赖，选择那个最新版本的依赖。
+虽然这听起来很方便，但在一些边界情况中，传递性依赖会造成一些配置问题。在这种情况下，你可以使用依赖排除。
+
+
+传递性依赖和范围
+依赖范围不仅仅影响项目中引用的依赖，它也将影响传递性依赖。
+
+最左边一列是项目的直接依赖，最上面一行是传递依赖范围，-表示被忽略。
+
+（compile，compile）项目直接的compile依赖的compile依赖，对项目来说还是compile依赖。
+	因为compile依赖在编译，打包，运行时都需要。
+	项目compile依赖curator，curator compile依赖zookeeper，所以项目compile依赖zookeeper。
+
+（compile，provided）项目直接的compile依赖的provided依赖，对项目来说会被忽略。
+	因为provided依赖只在编译时需要，打包时不需要（不会被打包），运行时由容器提供。
+	项目compile依赖httpcomponents，httpcomponents provided依赖servlet，所以项目不需要servlet。
+	因为httpcomponents已经编译过了，项目打包时不需要，运行时由tomcat提供，整个过程项目根servlet没关系。
+
+（compile，runtime）项目直接的compile依赖的runtime依赖，对项目来说还是runtime依赖。
+	因为runtime依赖只在打包，运行时需要，编译时不需要。
+	项目compile依赖common-db（自己写的项目），common-db runtime依赖mysql-connector-java，所以项目runtime依赖mysql-connector-java。
+	依赖照样被下载和打包，这样运行时才会有mysql-connector-java。
+
+（compile，test）项目直接的compile依赖的test依赖，对项目来说会被忽略。
+	因为test依赖只在编译和运行测试时需要，打包时不需要（不会被打包）。
+	其实，这里的test只影响项目的依赖，而不影响项目，因为它是依赖的test而不是项目的test。
+	依赖早就打好包了，且不会把test打进去。
+
+（provided，compile）项目直接的provided依赖的compile依赖，对项目来说是provided依赖（由compile退化为provided）。
+	因为项目在编译时需要provided依赖，provided依赖在编译，打包，运行时需要compile依赖，所以项目在编译时需要compile依赖。
+	provided依赖的compile依赖退化为provided依赖，这是推导出来的结果。
+	因项目只引用了provided依赖而没有引用compile依赖，编译时编译器会不会去检测compile依赖是否存在呢？
+	如果项目引用的provided依赖里的类引用了compile依赖里的类，等于项目间接引用compile依赖里的类，
+	此时编译器肯定会去检测compile依赖是否存在。
+	如果项目引用的provided依赖里的类没有引用了compile依赖里的类，等于项目没有间接引用compile依赖里的类，
+	此时编译器是否还会去检测compile依赖是否存在？我不知道，可能不会。
+	对于第一种情况，推导出来的结果是严格正确的。我需要，你提供了。
+	对于第二种结果，推导出来的结果是冗余正确的。我不需要，你也提供了。
+	因为maven并不知道，在实际中会遇到第一种情况还是第二种情况，所以只能采取更保守的。
+	不管编译器去不去检测，我都保证在编译时compile依赖是存在的。（说明至少在编译时可用）
+
+	项目打包时，provided依赖都不会被打进去，它的compile依赖更不会被打进去。
+	因为运行时，provided依赖由容器直接提供，它的compile依赖也应该由容器提供。
+	
+	所以仅需保证compile依赖在编译时可用即可。对应的就是provided范围。
+	所以provided的compile退化为provided是正确的。
+	
+	一点思考：
+	因为编译过程是静态的，所以编译器只能检测到显式引用。还有一种情况是通过反射引用，因反射是动态的，
+	在运行时的引用，编译器无法检测到，但并不代表没有，所以这种情况不能完全定性为冗余。
+	这个分析听起来没有问题，但它是站在编译器的角度去考虑的，和这里的传递依赖范围没有任何关系。
+	这些传递依赖范围是在maven的范畴里才存在的，离开了maven也就没有这些东西。而编译器只负责编译，
+	它根本不在乎也没有必要在乎这个世界是否会有maven出现。因为maven也不在乎编译器是否去检测依赖，
+	它只是站在中立的立场做了非常正确的事情。
+	
+（provided，provided）项目直接的provided依赖的provided依赖，对项目来说是provided依赖。
+	因为项目在编译时需要provided依赖，provided依赖在编译时需要provided依赖，所以项目在编译时需要provided依赖。
+	所以provided的provided还是provided。
+
+（provided，runtime）项目直接的provided依赖的runtime依赖，对项目来说是provided依赖。
+
+
+冲突解决
+
+有很多时候你需要排除一个传递性依赖，比如当你依赖于一个项目，后者又继而依赖于
+另外一个项目，但你的希望是，要么整个的排除这个传递性依赖，要么用另外一个提供
+同样功能的依赖来替代这个传递性依赖。
+
+排除一个传递性依赖
+<dependency>
+	<groupId>org.apache.curator</groupId>
+	<artifactId>curator-client</artifactId>
+	<version>2.10.0</version>
+	<exclusions>
+		<exclusion>
+			<groupId>org.apache.zookeeper</groupId>
+			<artifactId>zookeeper</artifactId>
+		</exclusion>
+	</exclusions>
+</dependency>
+
+排除并替换一个传递性依赖
+<dependency>
+	<groupId>org.apache.curator</groupId>
+	<artifactId>curator-client</artifactId>
+	<version>2.10.0</version>
+	<exclusions>
+		<exclusion>
+			<groupId>org.apache.zookeeper</groupId>
+			<artifactId>zookeeper</artifactId>
+		</exclusion>
+	</exclusions>
+</dependency>
+<dependency>
+	<groupId>org.apache.zookeeper</groupId>
+	<artifactId>zookeeper</artifactId>
+	<version>3.4.11</version>
+</dependency>		
+
+依赖管理
+在超级复杂的企业中采用Maven后，有数百多个相互关联的Maven项目，最大的问题就是依赖的版本问题。
+
+Maven在dependencyManagement元素中为你提供了一种方式来统一依赖版本号。
+
+经常会在一个组织或者项目的最顶层的父POM中看到dependencyManagement元素。
+
+如果子项目中引用的一个依赖在父pom.xml的dependencyManagement元素中定义过，则可以不用显式的列出版本号。
+
+Maven会沿着父子层次向上走，直到找到dependencyManagement元素，然后使用已经指定的版本号。
+
+注意，如果子项目定义了一个版本号，它将覆盖顶层POM的dependencyManagement元素中的版本号。
+
+注意，如果子项目引用的依赖在父pom中没有定义过，那还需自己指定版本号。
+
+依赖管理与依赖
+父pom中使用依赖管理（dependencyManagement）的目的是集中化统一管理依赖的版本号。并不是引入依赖。
+
+子项目还要自己引入所需依赖，只不过不用再指定版本号，因版本号已被父pom管理。
+
+父POM中使用依赖（dependencies）的目的是引入一些公共的依赖被所有子项目继承（或共享）。是引入依赖。
+
+子项目将自动继承父pom的依赖，不用再次引入。如所需依赖父pom中不存在，还需自己引入。
+
+
+多模块项目
+项目越来越大时，就需要拆分。将一个大项目拆分成若干个小模块项目，就是多模块项目。
+
+一个父模块和若干个子模块。父模块项目的打包类型总是pom，子模块项目就是普通项目。
+
+父模块几乎不包含实质性的东西，也很少生成一个构件。它的目的是将多个子模块归类在一起，可以一次性构建。
+
+注，模块可以嵌套，层级不受限制。可以一级一级往下拆分。
+
+文件系统上的目录结构也反映了多模块关系。如下的目录结构：
+top-group/pom.xml
+top-group/sub-group/pom.xml
+top-group/sub-group/project-a/pom.xml
+top-group/sub-group/project-b/pom.xml
+top-group/project-c/pom.xml
+
+top-group的pom.xml
+<project>
+	<groupId>org.sonatype.mavenbook</groupId>
+	<artifactId>top-group</artifactId>
+	<packaging>pom</packaging>
+	...
+	<modules>
+		<module>sub-group</module>
+		<module>project-c</module>
+	</modules>
+	...
+</project>
+
+sub-group的pom.xml
+<project>
+	<groupId>org.sonatype.mavenbook</groupId>
+	<artifactId>sub-group</artifactId>
+	<packaging>pom</packaging>
+	...
+	<modules>
+		<module>project-a</module>
+		<module>project-b</module>
+	</modules>
+	...
+</project>
+
+注，一般称多模块项目下的子模块项目为“子模块”而不是“子项目”。
+
+
+项目继承
+把一些公共信息放入一个单独的项目，让其它项目来继承它，可以自动获取这些信息，不用再重复配置。
+
+被继承的项目称为父项目，继承的项目称为子项目。（参考OOP中的父类、子类）
+
+使用parent元素来进行继承，将获取父pom的信息，也可以覆盖父POM中的值，或者添加一些新的值。
+
+继承示例：
+<project>
+	<parent>
+		<groupId>com.training.killerapp</groupId>
+		<artifactId>a-parent</artifactId>
+		<version>1.0-SNAPSHOT</version>
+	</parent>
+	<artifactId>project-a</artifactId>
+...
+</project>
+
+Maven先读取父POM，再读取当前项目的POM。
+当前项目没有指定groupId和version，它们从父pom继承而来。也可以指定为别的值。
+
+父项目的依赖也会自动添加到子项目中。
+
+默认情况下，Maven会去本地仓库中寻找父POM，或者在当前项目的父目录(../pom.xml) 中寻找。
+如果两个位置都没有，这种默认行为还可以通过relativePath元素进行覆盖。即指定父POM的位置。
+
+约定胜于配置，但也要具体问题具体分析。
+
+POM最佳实践
+
+依赖归类
+把一组逻辑上关联的依赖放在一起。创建一个打包方式为pom项目来将这些依赖归在一起。
+其它项目来引用该项目。（注意，不是继承）
+如下所示：
+<project>
+	<groupId>org.sonatype.mavenbook</groupId>
+	<artifactId>persistence-deps</artifactId>
+	<version>1.0</version>
+	<packaging>pom</packaging>
+	<dependencies>
+		<dependency>
+			<groupId>org.mybatis</groupId>
+			<artifactId>mybatis</artifactId>
+			<version>3.4.5</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mybatis</groupId>
+			<artifactId>mybatis-spring</artifactId>
+			<version>1.3.1</version>
+		</dependency>
+		<dependency>
+			<groupId>com.alibaba</groupId>
+			<artifactId>druid</artifactId>
+			<version>1.1.6</version>
+		</dependency>
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>5.1.45</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.pagehelper</groupId>
+			<artifactId>pagehelper</artifactId>
+			<version>5.1.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.jsqlparser</groupId>
+			<artifactId>jsqlparser</artifactId>
+			<version>1.1</version>
+		</dependency>
+	</dependencies>
+</project>
+
+可以在你的项目里引用它，指定依赖类型为pom。
+如下所示：
+<project>
+	<dependencies>
+		<dependency>
+			<groupId>org.sonatype.mavenbook</groupId>
+			<artifactId>persistence-deps</artifactId>
+			<version>1.0</version>
+			<type>pom</type>
+		</dependency>
+	</dependencies>
+</project>
+依赖归类和父子继承都可以达到减少重复配置或实现共享的目的。
+
+父子方式的缺点是一个项目只能有一个父项目。
+
+有时候将类似的依赖归类在一起并且使用pom依赖是更明智的做法。因为没有数量限制。
+
+多模块 VS 继承
+
+父模块和子模块只是一种聚合或构建关系。父模块对所有子模块感知。
+
+子模块对父模块可以无感知，子模块间可以无感知。
+
+侧重于管理、类似于组织架构。
+
+
+父项目和子项目是一种继承关系，父项目对子项目无感知，子项目对父项目感知。
+
+侧重于技术，自动获取依赖和默认配置。
