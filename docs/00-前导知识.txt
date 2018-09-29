@@ -2,8 +2,8 @@
 
 1、使用过Maven
 	做过Java开发
-	pom.xml，定义了一个maven项目
-	settings.xml，做一些公共默认配置
+	pom.xml
+	settings.xml
 	仓库：本地仓库、远程仓库、核心仓库
 
 2、Maven是什么

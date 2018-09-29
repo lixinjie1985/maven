@@ -1,5 +1,6 @@
 						项目对象模型（Project Object Model，POM）
 
+项目对象模型
 对项目管理进行抽象建模，形成POM。pom.xml文件定义了一个Maven项目。
 
 Maven坐标
@@ -201,34 +202,44 @@ javac编译Java类：A.java->B.jar->C.jar->D.jar，在编译A.java时，B.jar必
 	所以provided的compile退化为provided是正确的。
 	
 （provided，provided）项目的provided依赖的provided依赖，对项目来说是provided依赖。
+	项目->provided A->provided B，所以，项目->provided B。
 	因为项目在编译时需要provided依赖，provided依赖在编译时需要provided依赖，所以项目在编译时需要provided依赖。
 	所以provided的provided还是provided。
 
 （provided，runtime）项目的provided依赖的runtime依赖，对项目来说是provided依赖。
+	项目->provided A->runtime B，所以，项目->provided B。
 
 （provided，test）项目的provided依赖的test依赖，对项目来说会被忽略。
+	项目->provided A->test B，所以，项目忽略B。
 
 （runtime，compile）项目的runtime依赖的compile依赖，对项目来说是runtime依赖。
+	项目->runtime A->compile B，所以，项目->runtime B。
 	因为项目只有在运行，打包时才会需要runtime依赖，所以对runtime依赖的compile依赖的需要也是在运行，打包时。
 
 （runtime，provided）项目的runtime依赖的provided依赖，对项目来说会被忽略。
+	项目->runtime A->provided B，所以，项目忽略B。
 	因为项目只有在运行，打包时才会需要runtime依赖，runtime依赖只有在编译时需要provided依赖，
 	此时runtime依赖早已被编译过打成包了，所以不再需要。
 
 （runtime，runtime）项目的runtime依赖的runtime依赖，对项目来说是runtime依赖。
+	项目->runtime A->runtime B，所以，项目->runtime B。
 
 （runtime，test）项目的runtime依赖的test依赖，对项目来说会被忽略。
+	项目->runtime A->test B，所以，项目忽略B。
 
 （test，compile）项目的test依赖的compile依赖，对项目来说是test依赖。
+	项目->test A->compile B，所以，项目->test B。
 
 （test，provided）项目的test依赖的provided依赖，对项目来说会被忽略。
+	项目->test A->provided B，所以，项目忽略B。
 
 （test，runtime）项目的test依赖的runtime依赖，对项目来说是test依赖。
+	项目->test A->runtime B，所以，项目->test B。
 
 （test，test）项目的test依赖的test依赖，对项目来说会被忽略。
+	项目->test A->test B，所以，项目忽略B。
 
 冲突解决
-
 有很多时候你需要排除一个传递性依赖，比如当你依赖于一个项目，后者又继而依赖于
 另外一个项目，但你的希望是，要么整个的排除这个传递性依赖，要么用另外一个提供
 同样功能的依赖来替代这个传递性依赖。
@@ -262,30 +273,26 @@ javac编译Java类：A.java->B.jar->C.jar->D.jar，在编译A.java时，B.jar必
 	<groupId>org.apache.zookeeper</groupId>
 	<artifactId>zookeeper</artifactId>
 	<version>3.4.11</version>
-</dependency>		
+</dependency>
 
 依赖管理
 在超级复杂的企业中采用Maven后，有数百多个相互关联的Maven项目，最大的问题就是依赖的版本问题。
 
 Maven在dependencyManagement元素中为你提供了一种方式来统一依赖版本号。
-
-经常会在一个组织或者项目的最顶层的父POM中看到dependencyManagement元素。
+dependencyManagement元素经常会在一个组织或者项目的最顶层的父POM中。
 
 如果子项目中引用的一个依赖在父pom.xml的dependencyManagement元素中定义过，则可以不用显式的列出版本号。
-
 Maven会沿着父子层次向上走，直到找到dependencyManagement元素，然后使用已经指定的版本号。
 
-注意，如果子项目定义了一个版本号，它将覆盖顶层POM的dependencyManagement元素中的版本号。
-
-注意，如果子项目引用的依赖在父pom中没有定义过，那还需自己指定版本号。
+说明一点：
+如果子项目定义了一个版本号，它将覆盖顶层POM的dependencyManagement元素中的版本号。
+如果子项目引用的依赖在父pom中没有定义过，那还需自己指定版本号。
 
 依赖管理与依赖
-父pom中使用依赖管理（dependencyManagement）的目的是集中化统一管理依赖的版本号。并不是引入依赖。
-
+父pom中使用依赖管理（dependencyManagement）的目的只是集中化统一管理依赖的版本号。并不是引入依赖。
 子项目还要自己引入所需依赖，只不过不用再指定版本号，因版本号已被父pom管理。
 
 父POM中使用依赖（dependencies）的目的是引入一些公共的依赖被所有子项目继承（或共享）。是引入依赖。
-
 子项目将自动继承父pom的依赖，不用再次引入。如所需依赖父pom中不存在，还需自己引入。
 
 
@@ -293,10 +300,10 @@ Maven会沿着父子层次向上走，直到找到dependencyManagement元素，�
 项目越来越大时，就需要拆分。将一个大项目拆分成若干个小模块项目，就是多模块项目。
 
 一个父模块和若干个子模块。父模块项目的打包类型总是pom，子模块项目就是普通项目。
-
 父模块几乎不包含实质性的东西，也很少生成一个构件。它的目的是将多个子模块归类在一起，可以一次性构建。
 
-注，模块可以嵌套，层级不受限制。可以一级一级往下拆分。
+说明一点：
+模块可以嵌套，层级不受限制。可以一级一级往下拆分。
 
 文件系统上的目录结构也反映了多模块关系。如下的目录结构：
 top-group/pom.xml
@@ -331,16 +338,15 @@ sub-group的pom.xml
 	...
 </project>
 
-注，一般称多模块项目下的子模块项目为“子模块”而不是“子项目”。
+说明一点：
+一般称多模块项目下的子模块项目为“子模块”而不是“子项目”。
 
 
 项目继承
 把一些公共信息放入一个单独的项目，让其它项目来继承它，可以自动获取这些信息，不用再重复配置。
-
 被继承的项目称为父项目，继承的项目称为子项目。（参考OOP中的父类、子类）
 
 使用parent元素来进行继承，将获取父pom的信息，也可以覆盖父POM中的值，或者添加一些新的值。
-
 继承示例：
 <project>
 	<parent>
@@ -352,15 +358,12 @@ sub-group的pom.xml
 ...
 </project>
 
-Maven先读取父POM，再读取当前项目的POM。
+Maven在读取当前项目的POM前，先读取父POM。
 当前项目没有指定groupId和version，它们从父pom继承而来。也可以指定为别的值。
-
 父项目的依赖也会自动添加到子项目中。
 
 默认情况下，Maven会去本地仓库中寻找父POM，或者在当前项目的父目录(../pom.xml) 中寻找。
-如果两个位置都没有，这种默认行为还可以通过relativePath元素进行覆盖。即指定父POM的位置。
-
-约定胜于配置，但也要具体问题具体分析。
+如果两个位置都没有，需要通过relativePath元素指定父POM的位置。
 
 POM最佳实践
 
@@ -369,8 +372,8 @@ POM最佳实践
 其它项目来引用该项目。（注意，不是继承）
 如下所示：
 <project>
-	<groupId>org.sonatype.mavenbook</groupId>
-	<artifactId>persistence-deps</artifactId>
+	<groupId>org.eop.maven</groupId>
+	<artifactId>persistence</artifactId>
 	<version>1.0</version>
 	<packaging>pom</packaging>
 	<dependencies>
@@ -412,8 +415,8 @@ POM最佳实践
 <project>
 	<dependencies>
 		<dependency>
-			<groupId>org.sonatype.mavenbook</groupId>
-			<artifactId>persistence-deps</artifactId>
+			<groupId>org.eop.maven</groupId>
+			<artifactId>persistence</artifactId>
 			<version>1.0</version>
 			<type>pom</type>
 		</dependency>
@@ -422,18 +425,15 @@ POM最佳实践
 依赖归类和父子继承都可以达到减少重复配置或实现共享的目的。
 
 父子方式的缺点是一个项目只能有一个父项目。
-
 有时候将类似的依赖归类在一起并且使用pom依赖是更明智的做法。因为没有数量限制。
 
 多模块 VS 继承
 
-父模块和子模块只是一种聚合或构建关系。父模块对所有子模块感知。
-
+父模块和子模块只是一种聚合或构建关系，父模块对所有子模块感知。
 子模块对父模块可以无感知，子模块间可以无感知。
-
 侧重于管理、类似于组织架构。
 
 
-父项目和子项目是一种继承关系，父项目对子项目无感知，子项目对父项目感知。
-
+父项目和子项目是一种继承关系，父项目对所有子项目无感知。
+子项目对父项目感知，子项目间可以无感知。
 侧重于技术，自动获取依赖和默认配置。
